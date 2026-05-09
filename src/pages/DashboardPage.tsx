@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, Activity, DollarSign, TrendingUp } from 'lucide-react';
 
 export function DashboardPage() {
   const [metrics, setMetrics] = useState<any>(null);

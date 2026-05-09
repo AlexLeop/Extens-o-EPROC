@@ -14,6 +14,7 @@ interface AdminAuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   signOut: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType>({
@@ -22,6 +23,7 @@ const AdminAuthContext = createContext<AdminAuthContextType>({
   isLoading: true,
   isAdmin: false,
   signOut: async () => {},
+  signIn: async () => {},
 });
 
 export const useAdminAuth = () => useContext(AdminAuthContext);
@@ -73,12 +75,17 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AdminAuthContext.Provider value={{ user, profile, isLoading, isAdmin, signOut }}>
+    <AdminAuthContext.Provider value={{ user, profile, isLoading, isAdmin, signOut, signIn }}>
       {children}
     </AdminAuthContext.Provider>
   );
