@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Trash2, RefreshCw, Clock, Terminal } from 'lucide-react';
+import { Clock, Terminal } from 'lucide-react';
 
 export function ErrorsPage() {
   const [errors, setErrors] = useState<any[]>([]);
