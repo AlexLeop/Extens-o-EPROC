@@ -2,10 +2,10 @@ import { Shield, ArrowLeft } from 'lucide-react';
 
 export function PrivacyPage({ onBack }: { onBack?: () => void }) {
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px', color: '#fff' }}>
       {onBack && (
-        <button onClick={onBack} className="btn btn-ghost" style={{ marginBottom: '24px', paddingLeft: 0 }}>
-          <ArrowLeft size={18} /> Voltar
+        <button onClick={onBack} className="btn btn-ghost" style={{ marginBottom: '24px', paddingLeft: 0, color: 'var(--color-primary)' }}>
+          <ArrowLeft size={18} /> Voltar para o Login
         </button>
       )}
       
@@ -19,7 +19,7 @@ export function PrivacyPage({ onBack }: { onBack?: () => void }) {
         </div>
       </div>
 
-      <div className="card" style={{ background: 'var(--color-surface)', lineHeight: '1.8', color: 'var(--color-text-primary)' }}>
+      <div className="card" style={{ background: 'var(--color-surface)', lineHeight: '1.8', padding: '32px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <section>
             <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>Última atualização: 09 de Maio de 2026</p>

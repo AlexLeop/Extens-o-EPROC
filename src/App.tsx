@@ -5,6 +5,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { PlansPage } from './pages/PlansPage';
 import { ErrorsPage } from './pages/ErrorsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { 
   LayoutDashboard, 
   Users, 
@@ -103,6 +104,15 @@ function DashboardLayout() {
 
 function AppContent() {
   const { user, isLoading } = useAdminAuth();
+  const [showPrivacy, setShowPrivacy] = useState(false);
+
+  if (showPrivacy) {
+    return (
+      <div className="login-screen" style={{ display: 'block', overflowY: 'auto', background: 'var(--color-bg)' }}>
+        <PrivacyPage onBack={() => setShowPrivacy(false)} />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -112,7 +122,7 @@ function AppContent() {
     );
   }
 
-  return user ? <DashboardLayout /> : <LoginPage />;
+  return user ? <DashboardLayout /> : <LoginPage onShowPrivacy={() => setShowPrivacy(true)} />;
 }
 
 function App() {

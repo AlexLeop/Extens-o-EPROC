@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { Zap, ShieldAlert } from 'lucide-react';
 
-export function LoginPage() {
+interface LoginPageProps {
+  onShowPrivacy: () => void;
+}
+
+export function LoginPage({ onShowPrivacy }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +27,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="login-screen">
+    <div className="login-screen" style={{ flexDirection: 'column', gap: '20px' }}>
       <div className="login-card">
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
           <div style={{ 
@@ -73,7 +77,7 @@ export function LoginPage() {
             <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>E-mail</label>
             <input 
               type="email" 
-              placeholder="admin@eprocperito.com" 
+              placeholder="admin@eprocperito.com.br" 
               value={email} 
               onChange={(e) => setEmail(e.target.value)} 
               required 
@@ -94,6 +98,20 @@ export function LoginPage() {
           </button>
         </form>
       </div>
+
+      <button 
+        onClick={onShowPrivacy}
+        style={{ 
+          background: 'transparent', 
+          border: 'none', 
+          color: 'var(--color-text-secondary)', 
+          fontSize: '12px', 
+          cursor: 'pointer',
+          textDecoration: 'underline'
+        }}
+      >
+        Política de Privacidade e LGPD
+      </button>
     </div>
   );
 }
