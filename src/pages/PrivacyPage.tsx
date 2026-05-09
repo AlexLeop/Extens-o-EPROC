@@ -8,7 +8,7 @@ export function PrivacyPage({ onBack }: { onBack?: () => void }) {
           <ArrowLeft size={18} /> Voltar para o Login
         </button>
       )}
-      
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '40px' }}>
         <div style={{ background: 'var(--color-primary)', padding: '12px', borderRadius: '12px' }}>
           <Shield color="white" size={32} />
@@ -57,7 +57,7 @@ export function PrivacyPage({ onBack }: { onBack?: () => void }) {
 
           <section style={{ marginTop: '20px', padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
             <p style={{ fontWeight: 600 }}>Contato para Privacidade:</p>
-            <p style={{ color: 'var(--color-primary)' }}>suporte@eprocperito.com.br</p>
+            <p style={{ color: 'var(--color-primary)' }}>eproc.perito@gmail.com</p>
           </section>
         </div>
       </div>
