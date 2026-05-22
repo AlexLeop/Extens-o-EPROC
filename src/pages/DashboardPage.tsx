@@ -104,7 +104,7 @@ export function DashboardPage() {
       <div className="card" style={{ marginTop: '24px', padding: '24px', height: '400px' }}>
         <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: 'var(--color-text-primary)' }}>Evolução de Receita (MRR Real)</h3>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={historicalData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={historicalData} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
             <defs>
               <linearGradient id="colorMrr" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
@@ -112,12 +112,13 @@ export function DashboardPage() {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-            <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+            <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} tickMargin={12} />
             <YAxis 
               stroke="var(--color-text-muted)" 
               fontSize={12} 
               tickLine={false} 
               axisLine={false}
+              tickMargin={12}
               tickFormatter={(value) => `R$ ${value}`}
             />
             <Tooltip 

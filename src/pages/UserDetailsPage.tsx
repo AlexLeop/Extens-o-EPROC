@@ -128,6 +128,25 @@ export function UserDetailsPage() {
     }
   };
 
+  const handleToggleAdmin = async () => {
+    const isAdmin = user.is_admin;
+    const actionText = isAdmin ? 'Revogar privilégios de Admin' : 'Promover a Administrador';
+    
+    if (!confirm(`ATENÇÃO: Deseja ${actionText} deste usuário?`)) return;
+
+    setActionLoading(true);
+    try {
+      const { error } = await supabase.from('profiles').update({ is_admin: !isAdmin }).eq('id', id);
+      if (error) throw error;
+      alert(`Privilégios atualizados com sucesso!`);
+      setUser({ ...user, is_admin: !isAdmin });
+    } catch (err: any) {
+      alert(`Erro: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) return <p style={{ padding: '40px' }}>Carregando perfil do cliente...</p>;
   if (!user) return <p style={{ padding: '40px', color: 'var(--color-danger)' }}>Cliente não encontrado.</p>;
 
@@ -142,7 +161,9 @@ export function UserDetailsPage() {
             {user.full_name || 'Usuário Sem Nome'}
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-            ID: {user.id} {user.is_disabled && <span className="badge badge-danger" style={{ marginLeft: '8px' }}>Banido</span>}
+            ID: {user.id} 
+            {user.is_admin && <span className="badge badge-success" style={{ marginLeft: '8px' }}>Admin</span>}
+            {user.is_disabled && <span className="badge badge-danger" style={{ marginLeft: '8px' }}>Banido</span>}
           </p>
         </div>
       </header>
@@ -201,6 +222,21 @@ export function UserDetailsPage() {
               </button>
             </div>
             <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '8px' }}>O cliente perderá o acesso com a senha antiga imediatamente.</p>
+          </div>
+
+          <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+             <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: 0 }}>
+               Acesso atual: <strong style={{ color: user.is_admin ? 'var(--color-success)' : 'var(--color-text-primary)' }}>{user.is_admin ? 'Administrador' : 'Cliente Padrão'}</strong>
+             </p>
+             <button 
+                className="btn btn-ghost" 
+                disabled={actionLoading}
+                onClick={handleToggleAdmin}
+                style={{ color: user.is_admin ? 'var(--color-text-secondary)' : 'var(--color-primary)' }}
+              >
+                <ShieldAlert size={16} /> 
+                {user.is_admin ? 'Revogar Admin' : 'Tornar Admin'}
+              </button>
           </div>
         </div>
 
