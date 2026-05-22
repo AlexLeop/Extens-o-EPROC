@@ -2,17 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
-const mockHistoricalData = [
-  { name: 'Jan', mrr: 1200, users: 15 },
-  { name: 'Fev', mrr: 2100, users: 28 },
-  { name: 'Mar', mrr: 3800, users: 45 },
-  { name: 'Abr', mrr: 4500, users: 55 },
-  { name: 'Mai', mrr: 6200, users: 78 },
-  { name: 'Jun', mrr: 8900, users: 110 },
-];
-
 export function DashboardPage() {
   const [metrics, setMetrics] = useState<any>(null);
+  const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,6 +17,43 @@ export function DashboardPage() {
         
         if (error) throw error;
         setMetrics(data);
+
+        // Calcular Histórico de MRR Dinâmico Real
+        const { data: profiles } = await supabase.from('profiles').select('created_at, subscription_tier, is_disabled');
+        const { data: plans } = await supabase.from('plans').select('id, price');
+
+        if (profiles && plans) {
+          const pricesMap: Record<string, number> = {};
+          plans.forEach(p => pricesMap[p.id] = p.price);
+
+          const history = [];
+          const monthsNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+          
+          for (let i = 5; i >= 0; i--) {
+            const date = new Date();
+            date.setMonth(date.getMonth() - i);
+            date.setDate(28); // Fim do mês para contagem
+            
+            let monthMRR = 0;
+            let monthUsers = 0;
+
+            profiles.forEach(p => {
+              const created = new Date(p.created_at);
+              // Conta perfis criados antes ou durante este mês e que não são trials (e não estão desabilitados)
+              if (created <= date && !p.is_disabled && p.subscription_tier !== 'trial') {
+                monthMRR += pricesMap[p.subscription_tier] || 0;
+                monthUsers++;
+              }
+            });
+
+            history.push({
+              name: monthsNames[date.getMonth()],
+              mrr: monthMRR,
+              users: monthUsers
+            });
+          }
+          setHistoricalData(history);
+        }
       } catch (err) {
         console.error('Erro ao buscar métricas:', err);
       } finally {
@@ -73,9 +102,9 @@ export function DashboardPage() {
 
       {/* Gráfico Recharts */}
       <div className="card" style={{ marginTop: '24px', padding: '24px', height: '400px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: 'var(--color-text-primary)' }}>Evolução de Receita (MRR)</h3>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: 'var(--color-text-primary)' }}>Evolução de Receita (MRR Real)</h3>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={mockHistoricalData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={historicalData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="colorMrr" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>

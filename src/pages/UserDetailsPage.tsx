@@ -14,6 +14,7 @@ export function UserDetailsPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPlan, setNewPlan] = useState('');
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchUser() {
@@ -23,6 +24,12 @@ export function UserDetailsPage() {
         setNewEmail(data.email || '');
         setNewPlan(data.subscription_tier || 'trial');
       }
+      
+      const { data: plansData } = await supabase.from('plans').select('id, name').order('price', { ascending: true });
+      if (plansData) {
+        setAvailablePlans([{ id: 'trial', name: 'Trial (Teste)' }, ...plansData]);
+      }
+      
       setLoading(false);
     }
     fetchUser();
@@ -210,15 +217,23 @@ export function UserDetailsPage() {
                 <CreditCard style={{ position: 'absolute', left: '12px', top: '10px', color: 'var(--color-text-muted)' }} size={16} />
                 <select 
                   className="input" 
-                  style={{ width: '100%', paddingLeft: '36px', appearance: 'auto' }}
+                  style={{ 
+                    width: '100%', 
+                    paddingLeft: '36px', 
+                    appearance: 'none', 
+                    cursor: 'pointer',
+                    background: 'var(--color-surface)',
+                    backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 12px center',
+                    backgroundSize: '16px'
+                  }}
                   value={newPlan}
                   onChange={e => setNewPlan(e.target.value)}
                 >
-                  <option value="trial">Trial</option>
-                  <option value="5_processos">5 Processos</option>
-                  <option value="10_processos">10 Processos</option>
-                  <option value="20_processos">20 Processos</option>
-                  <option value="ilimitado">Ilimitado</option>
+                  {availablePlans.map(plan => (
+                    <option key={plan.id} value={plan.id}>{plan.name}</option>
+                  ))}
                 </select>
               </div>
               <button 
@@ -233,10 +248,17 @@ export function UserDetailsPage() {
 
           <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
              <button 
-                className="btn btn-ghost" 
+                className={user.is_disabled ? "btn btn-primary" : "btn btn-danger"} 
                 disabled={actionLoading}
                 onClick={handleToggleBan}
-                style={{ color: user.is_disabled ? 'var(--color-success)' : 'var(--color-danger)', border: `1px solid ${user.is_disabled ? 'var(--color-success)' : 'var(--color-danger)'}` }}
+                style={{
+                  backgroundColor: user.is_disabled ? 'var(--color-success)' : 'var(--color-danger)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  fontWeight: 600,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
               >
                 {user.is_disabled ? <CheckCircle size={16} /> : <Ban size={16} />} 
                 {user.is_disabled ? 'Reativar Conta' : 'Banir Conta'}
