@@ -6,34 +6,67 @@ export function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const ITEMS_PER_PAGE = 20;
 
-  async function fetchUsers() {
-    setLoading(true);
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    setUsers(data || []);
+  async function fetchUsers(currentPage = 0, reset = false, search = '') {
+    if (reset) {
+      setLoading(true);
+    }
+    
+    let query = supabase.from('profiles').select('*', { count: 'exact' });
+    
+    if (search.trim() !== '') {
+      // Supabase text search on email or full_name
+      query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%`);
+    }
+
+    const from = currentPage * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+
+    const { data, count, error } = await query
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) {
+      console.error(error);
+      setLoading(false);
+      return;
+    }
+
+    if (reset) {
+      setUsers(data || []);
+    } else {
+      setUsers(prev => [...prev, ...(data || [])]);
+    }
+
+    setHasMore(count !== null && (from + (data?.length || 0)) < count);
     setLoading(false);
   }
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    fetchUsers(0, true, searchTerm);
+  }, [searchTerm]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchUsers(nextPage, false, searchTerm);
+  };
 
   const toggleUserStatus = async (id: string, currentStatus: boolean) => {
     await supabase.from('profiles').update({ is_disabled: !currentStatus }).eq('id', id);
-    fetchUsers();
+    // Atualiza otimisticamente a UI
+    setUsers(users.map(u => u.id === id ? { ...u, is_disabled: !currentStatus } : u));
   };
 
-  const filteredUsers = users.filter(u => 
-    u.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) return <p style={{ padding: '40px' }}>Carregando clientes...</p>;
+  if (loading && page === 0) return <p style={{ padding: '40px' }}>Carregando clientes...</p>;
 
   return (
     <div className="animate-fade-in">
       <header style={{ marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', letterSpacing: '-0.5px' }}>Gestão de Clientes</h1>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.5px' }}>Gestão de Clientes</h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>Base de dados unificada da EPROC Perito</p>
       </header>
 
@@ -59,7 +92,7 @@ export function UsersPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map(user => (
+            {users.map(user => (
               <tr key={user.id}>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -67,7 +100,7 @@ export function UsersPage() {
                       {(user.full_name || user.email || '?')[0].toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, color: '#fff' }}>{user.full_name || 'Usuário sem Nome'}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{user.full_name || 'Usuário sem Nome'}</div>
                       <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>{user.email}</div>
                     </div>
                   </div>
@@ -101,6 +134,14 @@ export function UsersPage() {
           </tbody>
         </table>
       </div>
+
+      {hasMore && (
+        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+          <button onClick={loadMore} disabled={loading} className="btn btn-secondary">
+            {loading ? 'Carregando...' : 'Carregar Mais'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

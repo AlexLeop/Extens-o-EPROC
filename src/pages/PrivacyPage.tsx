@@ -2,7 +2,7 @@ import { Shield, ArrowLeft } from 'lucide-react';
 
 export function PrivacyPage({ onBack }: { onBack?: () => void }) {
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px', color: '#fff' }}>
+    <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px', color: 'var(--color-text-primary)' }}>
       {onBack && (
         <button onClick={onBack} className="btn btn-ghost" style={{ marginBottom: '24px', paddingLeft: 0, color: 'var(--color-primary)' }}>
           <ArrowLeft size={18} /> Voltar para o Login
@@ -14,7 +14,7 @@ export function PrivacyPage({ onBack }: { onBack?: () => void }) {
           <Shield color="white" size={32} />
         </div>
         <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff' }}>Política de Privacidade</h1>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--color-text-primary)' }}>Política de Privacidade</h1>
           <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>EPROC Perito — Transparência e Segurança</p>
         </div>
       </div>

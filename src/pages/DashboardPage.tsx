@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+
+const mockHistoricalData = [
+  { name: 'Jan', mrr: 1200, users: 15 },
+  { name: 'Fev', mrr: 2100, users: 28 },
+  { name: 'Mar', mrr: 3800, users: 45 },
+  { name: 'Abr', mrr: 4500, users: 55 },
+  { name: 'Mai', mrr: 6200, users: 78 },
+  { name: 'Jun', mrr: 8900, users: 110 },
+];
 
 export function DashboardPage() {
   const [metrics, setMetrics] = useState<any>(null);
@@ -29,7 +39,7 @@ export function DashboardPage() {
   return (
     <div>
       <header style={{ marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', letterSpacing: '-0.5px' }}>Visão Geral</h1>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.5px' }}>Visão Geral</h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>Métricas de performance e engajamento da EPROC Perito</p>
       </header>
 
@@ -61,9 +71,39 @@ export function DashboardPage() {
         </div>
       </div>
 
+      {/* Gráfico Recharts */}
+      <div className="card" style={{ marginTop: '24px', padding: '24px', height: '400px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '24px', color: 'var(--color-text-primary)' }}>Evolução de Receita (MRR)</h3>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={mockHistoricalData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorMrr" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+            <XAxis dataKey="name" stroke="var(--color-text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis 
+              stroke="var(--color-text-muted)" 
+              fontSize={12} 
+              tickLine={false} 
+              axisLine={false}
+              tickFormatter={(value) => `R$ ${value}`}
+            />
+            <Tooltip 
+              contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px' }}
+              itemStyle={{ color: 'var(--color-text-primary)' }}
+              formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, 'MRR']}
+            />
+            <Area type="monotone" dataKey="mrr" stroke="var(--color-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorMrr)" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px', marginTop: '12px' }}>
         <div className="table-container">
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', fontWeight: 600, color: '#fff' }}>
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border)', fontWeight: 600, color: 'var(--color-text-primary)' }}>
             Distribuição de Assinaturas
           </div>
           <table>
@@ -94,9 +134,9 @@ export function DashboardPage() {
           </table>
         </div>
 
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px', background: 'rgba(59, 130, 246, 0.05)', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '20px', background: 'rgba(29, 53, 87, 0.05)', borderColor: 'rgba(29, 53, 87, 0.2)' }}>
           <div className="card-title" style={{ marginBottom: 0, color: 'var(--color-primary)' }}>Ticket Médio (ARPU)</div>
-          <div style={{ fontSize: '36px', fontWeight: 700, color: '#fff' }}>
+          <div style={{ fontSize: '36px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
             R$ {metrics?.arpu?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
           </div>
           <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>

@@ -7,19 +7,36 @@ export function ErrorsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchErrors() {
-      const { data } = await supabase
-        .from('error_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      setErrors(data || []);
-      setLoading(false);
-    }
     fetchErrors();
   }, []);
 
-  if (loading) return <p>Carregando logs...</p>;
+  async function fetchErrors() {
+    setLoading(true);
+    const { data } = await supabase
+      .from('error_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    setErrors(data || []);
+    setLoading(false);
+  }
+
+  const toggleResolved = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('error_logs')
+        .update({ is_resolved: !currentStatus })
+        .eq('id', id);
+        
+      if (error) throw error;
+      fetchErrors();
+    } catch (err: any) {
+      alert('Erro ao atualizar status. Certifique-se de que a coluna "is_resolved" (boolean) existe na tabela error_logs.');
+      console.error(err);
+    }
+  };
+
+  if (loading) return <p style={{ padding: '40px' }}>Carregando logs...</p>;
 
   return (
     <div>
@@ -45,6 +62,7 @@ export function ErrorsPage() {
                   <th>Erro</th>
                   <th>Contexto</th>
                   <th>Status</th>
+                  <th style={{ textAlign: 'right' }}>Ação</th>
                 </tr>
               </thead>
               <tbody>
@@ -67,7 +85,20 @@ export function ErrorsPage() {
                       </code>
                     </td>
                     <td>
-                      <span className="badge badge-error">Crítico</span>
+                      {err.is_resolved ? (
+                        <span className="badge badge-success">Resolvido</span>
+                      ) : (
+                        <span className="badge badge-error">Crítico</span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button 
+                        onClick={() => toggleResolved(err.id, err.is_resolved)}
+                        className="btn btn-ghost"
+                        style={{ color: err.is_resolved ? 'var(--color-text-muted)' : 'var(--color-success)', fontSize: '13px' }}
+                      >
+                        {err.is_resolved ? 'Reabrir' : 'Marcar Resolvido'}
+                      </button>
                     </td>
                   </tr>
                 ))}
