@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate, Outlet } from 'react-r
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { UsersPage } from './pages/UsersPage';
+import { UserDetailsPage } from './pages/UserDetailsPage';
 import { PlansPage } from './pages/PlansPage';
 import { ErrorsPage } from './pages/ErrorsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -119,6 +120,7 @@ function AppContent() {
       <Route path="/admin" element={user ? <DashboardLayout /> : <Navigate to="/" replace />}>
         <Route index element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="users/:id" element={<UserDetailsPage />} />
         <Route path="plans" element={<PlansPage />} />
         <Route path="errors" element={<ErrorsPage />} />
       </Route>

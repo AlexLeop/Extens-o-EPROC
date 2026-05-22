@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Search, Ban, CheckCircle, Clock, Smartphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function UsersPage() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,7 +95,16 @@ export function UsersPage() {
           </thead>
           <tbody>
             {users.map(user => (
-              <tr key={user.id}>
+              <tr 
+                key={user.id} 
+                onClick={(e) => {
+                  // Previne navegação se clicar em um botão dentro da linha
+                  if ((e.target as HTMLElement).closest('button')) return;
+                  navigate(`/admin/users/${user.id}`);
+                }}
+                style={{ cursor: 'pointer' }}
+                className="table-row-hover"
+              >
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '36px', height: '36px', background: 'var(--color-bg)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--color-primary)', border: '1px solid var(--color-border)' }}>
