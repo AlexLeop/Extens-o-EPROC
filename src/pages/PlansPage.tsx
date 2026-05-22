@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { CreditCard, RefreshCw, Check, Save, AlertCircle } from 'lucide-react';
+import { CreditCard, RefreshCw, Check, Save, AlertCircle, Trash2 } from 'lucide-react';
 
 export function PlansPage() {
   const [plans, setPlans] = useState<any[]>([]);
@@ -58,6 +58,21 @@ export function PlansPage() {
     }
   };
 
+  const handleDeletePlan = async (id: string, name: string) => {
+    if (!confirm(`Tem certeza absoluta que deseja excluir o plano "${name}"?\nEsta ação não pode ser desfeita e pode quebrar os perfis de usuários atrelados a este plano.`)) return;
+    
+    try {
+      const { error } = await supabase.from('plans').delete().eq('id', id);
+      if (error) throw error;
+      
+      setPlans(plans.filter(p => p.id !== id));
+      alert('Plano excluído com sucesso.');
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao excluir o plano: ' + err.message);
+    }
+  };
+
   if (loading) return <p style={{ padding: '40px' }}>Carregando planos...</p>;
 
   return (
@@ -87,8 +102,18 @@ export function PlansPage() {
                   {feedback?.message}
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-text-muted)', fontSize: '12px', fontWeight: 600 }}>
-                  <CreditCard size={14} /> {plan.id.slice(0, 8)}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-text-muted)', fontSize: '12px', fontWeight: 600 }}>
+                    <CreditCard size={14} /> {plan.id.slice(0, 8)}
+                  </div>
+                  <button 
+                    onClick={() => handleDeletePlan(plan.id, plan.name)}
+                    className="btn btn-ghost"
+                    style={{ padding: '4px', color: 'var(--color-danger)', borderColor: 'transparent' }}
+                    title="Excluir Plano"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               )}
             </div>
