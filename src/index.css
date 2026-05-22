@@ -26,6 +26,22 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+[data-theme="dark"] {
+  --color-primary: #3B82F6; /* Azul mais vibrante no dark */
+  --color-primary-hover: #60A5FA;
+  --color-accent: #1E3A8A;
+  --color-bg: #0F172A; /* Slate 900 */
+  --color-surface: #1E293B; /* Slate 800 */
+  --color-surface-hover: #334155; /* Slate 700 */
+  --color-border: #334155;
+  --color-text-primary: #F8FAFC; /* Quase branco */
+  --color-text-secondary: #94A3B8;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -76,8 +92,7 @@ body {
 /* Header Limpo */
 .app-header {
   height: var(--header-height);
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(8px);
+  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
@@ -273,7 +288,7 @@ input:focus, textarea:focus, select:focus, .input:focus {
 
 /* Login Page */
 .login-screen {
-  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+  background: var(--color-bg);
   display: flex;
   align-items: center;
   justify-content: center;

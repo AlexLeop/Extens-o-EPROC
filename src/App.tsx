@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminAuthProvider, useAdminAuth } from './contexts/AdminAuthContext';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, Outlet } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
@@ -8,13 +8,15 @@ import { UserDetailsPage } from './pages/UserDetailsPage';
 import { PlansPage } from './pages/PlansPage';
 import { ErrorsPage } from './pages/ErrorsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { SettingsPage } from './pages/SettingsPage';
 import {
   LayoutDashboard,
   Users,
   CreditCard,
   AlertTriangle,
   LogOut,
-  ShieldAlert
+  ShieldAlert,
+  Settings
 } from 'lucide-react';
 
 function DashboardLayout() {
@@ -64,6 +66,9 @@ function DashboardLayout() {
           <NavLink to="/admin/errors" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             <AlertTriangle size={18} /> Logs de Suporte
           </NavLink>
+          <NavLink to="/admin/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <Settings size={18} /> Configurações
+          </NavLink>
         </nav>
 
         <div style={{ marginTop: 'auto', padding: '24px', borderTop: '1px solid var(--color-border)' }}>
@@ -98,6 +103,14 @@ function AppContent() {
   const { user, isLoading } = useAdminAuth();
   const [showPrivacy, setShowPrivacy] = useState(false);
 
+  // Inicializar o tema dark se estiver salvo
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('admin_theme');
+    if (savedTheme) {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  }, []);
+
   if (showPrivacy) {
     return (
       <div className="login-screen" style={{ display: 'block', overflowY: 'auto', background: 'var(--color-bg)' }}>
@@ -123,6 +136,7 @@ function AppContent() {
         <Route path="users/:id" element={<UserDetailsPage />} />
         <Route path="plans" element={<PlansPage />} />
         <Route path="errors" element={<ErrorsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
