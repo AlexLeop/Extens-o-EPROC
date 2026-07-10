@@ -8,16 +8,29 @@ export function PlansPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, any>>({});
   const [feedback, setFeedback] = useState<{ id: string, type: 'success' | 'error', message: string } | null>(null);
+  const [globalLimits, setGlobalLimits] = useState<Record<string, number | null>>({});
 
   async function fetchPlans() {
     setLoading(true);
     const { data } = await supabase.from('plans').select('*').order('price', { ascending: true });
+    
+    // Buscar limites globais armazenados em settings
+    let limitsMap: Record<string, number | null> = {};
+    const { data: settingsData, error: settingsError } = await supabase.from('settings').select('*').eq('id', 'plan_limits').maybeSingle();
+    
+    if (settingsData && settingsData.value) {
+      try { limitsMap = JSON.parse(settingsData.value); } catch(e) {}
+    }
+    setGlobalLimits(limitsMap);
+
     setPlans(data || []);
     
-    // Inicializa os rascunhos com os dados do banco
+    // Inicializa os rascunhos com os dados do banco e limites do settings
     if (data) {
       const initialDrafts: Record<string, any> = {};
-      data.forEach(p => initialDrafts[p.id] = { ...p });
+      data.forEach(p => {
+        initialDrafts[p.id] = { ...p, limit: limitsMap[p.id] === undefined ? null : limitsMap[p.id] };
+      });
       setDrafts(initialDrafts);
     }
     setLoading(false);
@@ -40,12 +53,23 @@ export function PlansPage() {
     setFeedback(null);
     try {
       let updates = { ...drafts[id] };
+      const newLimit = updates.limit;
+      delete updates.limit; // Não salva o limite na tabela plans
+
       if (typeof updates.features === 'string') {
         updates.features = updates.features.split('\n').filter((f: string) => f.trim() !== '');
       }
+      
+      // Salva dados na tabela plans
       const { error } = await supabase.from('plans').update(updates).eq('id', id);
       if (error) throw error;
       
+      // Salva o limite na tabela settings
+      const newLimitsMap = { ...globalLimits, [id]: newLimit };
+      const { error: settingsError } = await supabase.from('settings').upsert({ id: 'plan_limits', value: JSON.stringify(newLimitsMap) });
+      if (settingsError) throw settingsError;
+      setGlobalLimits(newLimitsMap);
+
       setFeedback({ id, type: 'success', message: 'Salvo com sucesso!' });
       // Atualiza o plano original com os dados do rascunho
       setPlans(plans.map(p => p.id === id ? { ...p, ...updates } : p));
@@ -135,6 +159,21 @@ export function PlansPage() {
                   type="number" 
                   value={drafts[plan.id]?.price || 0} 
                   onChange={(e) => handleDraftChange(plan.id, 'price', parseFloat(e.target.value))}
+                  className="input"
+                  style={{ width: '100%' }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Limite de Processos na Extensão</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  placeholder="Deixe em branco para ilimitado"
+                  value={drafts[plan.id]?.limit === null ? '' : drafts[plan.id]?.limit} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleDraftChange(plan.id, 'limit', val === '' ? null : parseInt(val));
+                  }}
                   className="input"
                   style={{ width: '100%' }}
                 />

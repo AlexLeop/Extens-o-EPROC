@@ -143,11 +143,14 @@ function AppContent() {
   );
 }
 
+import { Toaster } from 'sonner';
+
 function App() {
   return (
     <BrowserRouter>
       <AdminAuthProvider>
         <AppContent />
+        <Toaster position="top-right" richColors />
       </AdminAuthProvider>
     </BrowserRouter>
   );

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, Mail, ShieldAlert, Key, CreditCard, Save, Ban, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { Modal } from '../components/Modal';
 
 export function UserDetailsPage() {
   const { id } = useParams();
@@ -14,7 +16,14 @@ export function UserDetailsPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPlan, setNewPlan] = useState('');
+  const [newTrialDate, setNewTrialDate] = useState('');
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+
+  // Modals state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isBanModalOpen, setIsBanModalOpen] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -23,6 +32,7 @@ export function UserDetailsPage() {
         setUser(data);
         setNewEmail(data.email || '');
         setNewPlan(data.subscription_tier || 'trial');
+        setNewTrialDate(data.trial_ends_at ? new Date(data.trial_ends_at).toISOString().slice(0, 16) : '');
       }
       
       const { data: plansData } = await supabase.from('plans').select('id, name').order('price', { ascending: true });
@@ -56,35 +66,34 @@ export function UserDetailsPage() {
   };
 
   const handleUpdateEmail = async () => {
-    if (!newEmail || newEmail === user.email) return;
-    if (!confirm(`Deseja realmente alterar o e-mail deste cliente para ${newEmail}?`)) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      toast.error('Formato de e-mail inválido.');
+      return;
+    }
     
     setActionLoading(true);
     try {
       await callEdgeFunction('update_email', { targetEmail: newEmail });
-      alert('E-mail atualizado com sucesso!');
+      toast.success('E-mail atualizado com sucesso!');
       setUser({ ...user, email: newEmail });
+      setIsEmailModalOpen(false);
     } catch (err: any) {
-      alert(`Erro: ${err.message}`);
+      toast.error(`Erro: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleUpdatePassword = async () => {
-    if (!newPassword || newPassword.length < 6) {
-      alert('A nova senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-    if (!confirm('Tem certeza de que deseja forçar uma nova senha para este cliente?')) return;
-
     setActionLoading(true);
     try {
       await callEdgeFunction('update_password', { targetPassword: newPassword });
-      alert('Senha atualizada com sucesso!');
+      toast.success('Senha atualizada com sucesso!');
       setNewPassword('');
+      setIsPasswordModalOpen(false);
     } catch (err: any) {
-      alert(`Erro: ${err.message}`);
+      toast.error(`Erro: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -97,32 +106,53 @@ export function UserDetailsPage() {
     try {
       const { error } = await supabase.from('profiles').update({ subscription_tier: newPlan }).eq('id', id);
       if (error) throw error;
-      alert('Plano atualizado com sucesso!');
+      toast.success('Plano atualizado com sucesso!');
       setUser({ ...user, subscription_tier: newPlan });
     } catch (err: any) {
-      alert(`Erro: ${err.message}`);
+      toast.error(`Erro: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
   };
 
+  const handleUpdateTrial = async () => {
+    setActionLoading(true);
+    try {
+      const isoDate = newTrialDate ? new Date(newTrialDate).toISOString() : null;
+      const { error } = await supabase.from('profiles').update({ trial_ends_at: isoDate }).eq('id', id);
+      if (error) throw error;
+      toast.success('Data de Trial atualizada com sucesso!');
+      setUser({ ...user, trial_ends_at: isoDate });
+    } catch (err: any) {
+      toast.error(`Erro: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleExtendTrial = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 15);
+    setNewTrialDate(d.toISOString().slice(0, 16));
+  };
+  
+  const handleExpireTrial = () => {
+    setNewTrialDate('');
+  };
+
   const handleToggleBan = async () => {
     const isBanned = user.is_disabled;
     const action = isBanned ? 'unban_user' : 'ban_user';
-    const confirmMsg = isBanned 
-      ? 'Deseja reativar esta conta completamente?' 
-      : 'ATENÇÃO: Deseja banir esta conta? O usuário não poderá fazer login na extensão.';
-
-    if (!confirm(confirmMsg)) return;
 
     setActionLoading(true);
     try {
       await callEdgeFunction(action, {});
       await supabase.from('profiles').update({ is_disabled: !isBanned }).eq('id', id);
-      alert(isBanned ? 'Conta Reativada!' : 'Conta Banida!');
+      toast.success(isBanned ? 'Conta Reativada!' : 'Conta Banida!');
       setUser({ ...user, is_disabled: !isBanned });
+      setIsBanModalOpen(false);
     } catch (err: any) {
-      alert(`Erro: ${err.message}`);
+      toast.error(`Erro: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -130,24 +160,28 @@ export function UserDetailsPage() {
 
   const handleToggleAdmin = async () => {
     const isAdmin = user.is_admin;
-    const actionText = isAdmin ? 'Revogar privilégios de Admin' : 'Promover a Administrador';
     
-    if (!confirm(`ATENÇÃO: Deseja ${actionText} deste usuário?`)) return;
-
     setActionLoading(true);
     try {
       const { error } = await supabase.from('profiles').update({ is_admin: !isAdmin }).eq('id', id);
       if (error) throw error;
-      alert(`Privilégios atualizados com sucesso!`);
+      toast.success(`Privilégios atualizados com sucesso!`);
       setUser({ ...user, is_admin: !isAdmin });
+      setIsAdminModalOpen(false);
     } catch (err: any) {
-      alert(`Erro: ${err.message}`);
+      toast.error(`Erro: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
   };
 
-  if (loading) return <p style={{ padding: '40px' }}>Carregando perfil do cliente...</p>;
+  if (loading) return (
+    <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ width: '200px', height: '30px', background: 'var(--color-border)', borderRadius: '4px', animation: 'pulse 2s infinite' }}></div>
+      <div style={{ width: '100%', height: '300px', background: 'var(--color-surface)', borderRadius: '12px', animation: 'pulse 2s infinite' }}></div>
+    </div>
+  );
+  
   if (!user) return <p style={{ padding: '40px', color: 'var(--color-danger)' }}>Cliente não encontrado.</p>;
 
   return (
@@ -191,8 +225,8 @@ export function UserDetailsPage() {
               </div>
               <button 
                 className="btn btn-primary" 
-                disabled={actionLoading || newEmail === user.email}
-                onClick={handleUpdateEmail}
+                disabled={actionLoading || newEmail === user.email || !newEmail}
+                onClick={() => setIsEmailModalOpen(true)}
               >
                 <Save size={16} /> Salvar
               </button>
@@ -215,13 +249,13 @@ export function UserDetailsPage() {
               </div>
               <button 
                 className="btn btn-secondary" 
-                disabled={actionLoading || !newPassword}
-                onClick={handleUpdatePassword}
+                disabled={actionLoading || newPassword.length < 6}
+                onClick={() => setIsPasswordModalOpen(true)}
               >
-                <ShieldAlert size={16} /> Aplicar Senha
+                <ShieldAlert size={16} /> Aplicar
               </button>
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '8px' }}>O cliente perderá o acesso com a senha antiga imediatamente.</p>
+            <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '8px' }}>A senha deve ter pelo menos 6 caracteres.</p>
           </div>
 
           <div style={{ marginTop: 'auto', paddingTop: '24px', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -231,7 +265,7 @@ export function UserDetailsPage() {
              <button 
                 className="btn btn-ghost" 
                 disabled={actionLoading}
-                onClick={handleToggleAdmin}
+                onClick={() => setIsAdminModalOpen(true)}
                 style={{ color: user.is_admin ? 'var(--color-text-secondary)' : 'var(--color-primary)' }}
               >
                 <ShieldAlert size={16} /> 
@@ -245,6 +279,30 @@ export function UserDetailsPage() {
           <h3 style={{ fontSize: '16px', fontWeight: 600, borderBottom: '1px solid var(--color-border)', paddingBottom: '12px' }}>
             Gestão Comercial
           </h3>
+
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Expiração do Trial</label>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <input 
+                type="datetime-local" 
+                className="input" 
+                style={{ flex: 1 }}
+                value={newTrialDate}
+                onChange={e => setNewTrialDate(e.target.value)}
+              />
+              <button 
+                className="btn btn-primary" 
+                disabled={actionLoading}
+                onClick={handleUpdateTrial}
+              >
+                <Save size={16} /> Salvar
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="btn btn-ghost" style={{ fontSize: '12px', padding: '4px 8px' }} onClick={handleExtendTrial}>+ 15 Dias</button>
+              <button className="btn btn-ghost" style={{ fontSize: '12px', padding: '4px 8px', color: 'var(--color-danger)' }} onClick={handleExpireTrial}>Expirar Agora</button>
+            </div>
+          </div>
           
           <div>
             <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>Nível de Assinatura (Plano)</label>
@@ -259,10 +317,6 @@ export function UserDetailsPage() {
                     appearance: 'none', 
                     cursor: 'pointer',
                     background: 'var(--color-surface)',
-                    backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'right 12px center',
-                    backgroundSize: '16px'
                   }}
                   value={newPlan}
                   onChange={e => setNewPlan(e.target.value)}
@@ -286,7 +340,7 @@ export function UserDetailsPage() {
              <button 
                 className={user.is_disabled ? "btn btn-primary" : "btn btn-danger"} 
                 disabled={actionLoading}
-                onClick={handleToggleBan}
+                onClick={() => setIsBanModalOpen(true)}
                 style={{
                   backgroundColor: user.is_disabled ? 'var(--color-success)' : 'var(--color-danger)',
                   color: 'white',
@@ -297,12 +351,53 @@ export function UserDetailsPage() {
                 }}
               >
                 {user.is_disabled ? <CheckCircle size={16} /> : <Ban size={16} />} 
-                {user.is_disabled ? 'Reativar Conta' : 'Banir Conta'}
+                <span style={{ marginLeft: '8px' }}>{user.is_disabled ? 'Reativar Conta' : 'Banir Conta'}</span>
               </button>
           </div>
         </div>
-
       </div>
+
+      {/* Modais de Confirmação */}
+      <Modal 
+        isOpen={isEmailModalOpen} 
+        onClose={() => setIsEmailModalOpen(false)} 
+        title="Confirmar alteração de e-mail"
+        footer={<><button className="btn btn-ghost" onClick={() => setIsEmailModalOpen(false)}>Cancelar</button><button className="btn btn-primary" onClick={handleUpdateEmail}>Confirmar Alteração</button></>}
+      >
+        <p>Tem certeza de que deseja alterar o e-mail deste usuário para <strong>{newEmail}</strong>?</p>
+        <p style={{ marginTop: '8px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>Ele precisará usar o novo e-mail para fazer login no sistema.</p>
+      </Modal>
+
+      <Modal 
+        isOpen={isPasswordModalOpen} 
+        onClose={() => setIsPasswordModalOpen(false)} 
+        title="Forçar redefinição de senha"
+        footer={<><button className="btn btn-ghost" onClick={() => setIsPasswordModalOpen(false)}>Cancelar</button><button className="btn btn-danger" onClick={handleUpdatePassword}>Redefinir Senha</button></>}
+      >
+        <p>Atenção! Você está forçando uma nova senha para o cliente.</p>
+        <p style={{ marginTop: '8px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>A senha antiga deixará de funcionar imediatamente.</p>
+      </Modal>
+
+      <Modal 
+        isOpen={isAdminModalOpen} 
+        onClose={() => setIsAdminModalOpen(false)} 
+        title={user?.is_admin ? "Revogar Privilégios" : "Conceder Privilégios"}
+        footer={<><button className="btn btn-ghost" onClick={() => setIsAdminModalOpen(false)}>Cancelar</button><button className="btn btn-primary" onClick={handleToggleAdmin}>Confirmar</button></>}
+      >
+        <p>Tem certeza que deseja {user?.is_admin ? 'remover' : 'conceder'} acesso administrativo para este usuário?</p>
+        {!user?.is_admin && <p style={{ marginTop: '8px', fontSize: '14px', color: 'var(--color-danger)' }}>Administradores têm acesso total a dados sensíveis de todos os clientes.</p>}
+      </Modal>
+
+      <Modal 
+        isOpen={isBanModalOpen} 
+        onClose={() => setIsBanModalOpen(false)} 
+        title={user?.is_disabled ? "Reativar Cliente" : "Banir Cliente"}
+        footer={<><button className="btn btn-ghost" onClick={() => setIsBanModalOpen(false)}>Cancelar</button><button className={user?.is_disabled ? "btn btn-primary" : "btn btn-danger"} onClick={handleToggleBan}>Confirmar Ação</button></>}
+      >
+        <p>Deseja {user?.is_disabled ? 'reativar' : 'banir'} este cliente do sistema?</p>
+        {!user?.is_disabled && <p style={{ marginTop: '8px', fontSize: '14px', color: 'var(--color-text-secondary)' }}>Ele perderá imediatamente o acesso à extensão.</p>}
+      </Modal>
+
     </div>
   );
 }
