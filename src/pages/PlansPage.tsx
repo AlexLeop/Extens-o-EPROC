@@ -16,7 +16,7 @@ export function PlansPage() {
     
     // Buscar limites globais armazenados em settings
     let limitsMap: Record<string, number | null> = {};
-    const { data: settingsData, error: settingsError } = await supabase.from('settings').select('*').eq('id', 'plan_limits').maybeSingle();
+    const { data: settingsData } = await supabase.from('settings').select('*').eq('id', 'plan_limits').maybeSingle();
     
     if (settingsData && settingsData.value) {
       try { limitsMap = JSON.parse(settingsData.value); } catch(e) {}
